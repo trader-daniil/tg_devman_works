@@ -10,15 +10,8 @@ DEVMAN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DEVMAN_REVIEWS_LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
 
-def send_message(bot_token, chat_id, message):
-    bot = telegram.Bot(token=bot_token)
-    bot.send_message(
-        text=message,
-        chat_id=chat_id,
-    )
-
-def get_user_reviews(devman_token, timestamp=''):
-    headers={
+def get_user_reviews(devman_token, timestamp=None):
+    headers = {
         'Authorization': f'Token {devman_token}',
     }
     params = {
@@ -43,7 +36,10 @@ def main():
     devman_token = os.getenv('DEVMAN_TOKEN')
     tg_bot_token = os.getenv('TG_BOT_TOKEN')
     tg_chat_id = os.getenv('TG_CHAT_ID')
+    bot = telegram.Bot(token=tg_bot_token)
     current_timestamp = time.time()
+    seconds_to_sleep = 2
+
     while True:
         try:
             result = get_user_reviews(
@@ -52,18 +48,19 @@ def main():
             )
         except requests.exceptions.ReadTimeout:
             logging.error('time out, try again')
+            time.sleep(seconds_to_sleep)
             continue
         except requests.ConnectionError:
             logging.error('connection error try again')
+            time.sleep(seconds_to_sleep)
             continue
         if result['status'] == 'timeout':
             current_timestamp=result['timestamp_to_request']
             continue
         result = parse_work_result(work_result=result['new_attempts'][0])
-        send_message(
-            bot_token=tg_bot_token,
+        bot.send_message(
+            text=result,
             chat_id=tg_chat_id,
-            message=result,
         )
         current_timestamp = time.time()
 
