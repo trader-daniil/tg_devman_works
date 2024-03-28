@@ -10,7 +10,7 @@ DEVMAN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DEVMAN_REVIEWS_LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
 
-def get_user_reviews(devman_token, timestamp=None):
+def get_user_reviews(devman_token, timestamp=None, timeout=None):
     headers = {
         'Authorization': f'Token {devman_token}',
     }
@@ -21,15 +21,19 @@ def get_user_reviews(devman_token, timestamp=None):
         url=DEVMAN_REVIEWS_LONGPOLLING_URL,
         headers=headers,
         params=params,
+        timeout=timeout,
     )
     response.raise_for_status()
     return response.json()
-    
+
+
 def parse_work_result(work_result):
     if work_result['is_negative']:
         return (f'Переделайте работу {work_result["lesson_title"]}'
                 f' ссылка - {work_result["lesson_url"]}')
-    return f'Вы сдали работу {work_result["lesson_title"]} ссылка - {work_result["lesson_url"]}'
+    return (f'Вы сдали работу {work_result["lesson_title"]} '
+            f'ссылка - {work_result["lesson_url"]}')
+
 
 def main():
     load_dotenv()
@@ -45,6 +49,7 @@ def main():
             result = get_user_reviews(
                 devman_token=devman_token,
                 timestamp=current_timestamp,
+                timeout=seconds_to_sleep,
             )
         except requests.exceptions.ReadTimeout:
             logging.error('time out, try again')
@@ -63,6 +68,7 @@ def main():
             chat_id=tg_chat_id,
         )
         current_timestamp = time.time()
+
 
 if __name__ == '__main__':
     main()
