@@ -52,7 +52,6 @@ def main():
                 timeout=seconds_to_sleep,
             )
         except requests.exceptions.ReadTimeout:
-            logging.error('time out, try again')
             time.sleep(seconds_to_sleep)
             continue
         except requests.ConnectionError:
