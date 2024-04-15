@@ -9,6 +9,19 @@ import logging
 DEVMAN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DEVMAN_REVIEWS_LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
+class TelegramLogHandler(logging.Handler):
+
+    def __init__(self, tg_bot, chat_id):
+        super().__init__()
+        self.tg_bot = tg_bot
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        log_entry = self.format(record=record)
+        self.tg_bot.send_message(
+            chat_id=self.chat_id,
+            text=log_entry,
+        )
 
 def get_user_reviews(devman_token, timestamp=None, timeout=None):
     headers = {
@@ -41,6 +54,12 @@ def main():
     tg_bot_token = os.getenv('TG_BOT_TOKEN')
     tg_chat_id = os.getenv('TG_CHAT_ID')
     bot = telegram.Bot(token=tg_bot_token)
+    logger = logging.getLogger('bot')
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(TelegramLogHandler(
+        tg_bot=bot,
+        chat_id=tg_chat_id,
+    ))
     current_timestamp = time.time()
     seconds_to_sleep = 2
 
@@ -52,10 +71,14 @@ def main():
                 timeout=seconds_to_sleep,
             )
         except requests.exceptions.ReadTimeout:
-            logging.error('time out, try again')
+            logger.debug('time out, try again')
             continue
         except requests.ConnectionError:
-            logging.error('connection error try again')
+            logger.error('Connection error, try again')
+            time.sleep(seconds_to_sleep)
+            continue
+        except Exception as e:
+            logger.error(e)
             time.sleep(seconds_to_sleep)
             continue
         if result['status'] == 'timeout':
