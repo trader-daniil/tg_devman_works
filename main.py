@@ -9,6 +9,9 @@ import logging
 DEVMAN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DEVMAN_REVIEWS_LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
+
+logger = logging.getLogger('bot')
+
 class TelegramLogHandler(logging.Handler):
 
     def __init__(self, tg_bot, chat_id):
@@ -54,7 +57,6 @@ def main():
     tg_bot_token = os.getenv('TG_BOT_TOKEN')
     tg_chat_id = os.getenv('TG_CHAT_ID')
     bot = telegram.Bot(token=tg_bot_token)
-    logger = logging.getLogger('bot')
     logger.setLevel(logging.WARNING)
     logger.addHandler(TelegramLogHandler(
         tg_bot=bot,
